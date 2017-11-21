@@ -1,0 +1,25 @@
+apply plugin: 'groovy'
+apply plugin: 'maven'
+
+dependencies {
+    implementation gradleApi()
+    implementation localGroovy()
+
+    implementation 'com.android.tools.build:gradle:3.0.1'
+    implementation 'org.javassist:javassist:3.22.0-GA'
+}
+
+group 'com.ximsfei'
+version '1.0.0'
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: "file:///Users/ximsfei/local/repo")
+            pom.project {
+                artifactId "atrace"
+            }
+
+        }
+    }
+}
