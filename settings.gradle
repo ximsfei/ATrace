@@ -1,1 +1,1 @@
-include ':app', ':atrace-gradle'
+include ':app', ':atrace-gradle', ':atrace-lib'
