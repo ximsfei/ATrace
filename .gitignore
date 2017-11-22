@@ -16,13 +16,9 @@
 .idea/runConfigurations.xml
 .idea/workspace.xml
 ATrace.iml
-app/
-build.gradle
 build/
-gradle-atrace/
 gradle.properties
 gradle/
 gradlew
 gradlew.bat
 local.properties
-settings.gradle
