@@ -1,12 +1,14 @@
 package com.ximsfei.atrace
 
 import com.android.build.api.transform.QualifiedContent
+import com.android.build.api.transform.Format
 import com.android.build.api.transform.Transform
 import com.android.build.api.transform.TransformException
 import com.android.build.api.transform.TransformInvocation
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.internal.pipeline.TransformManager
 import org.gradle.api.Project
+import org.apache.commons.io.FileUtils
 
 class ATraceTransform extends Transform {
     private Project project
@@ -41,13 +43,20 @@ class ATraceTransform extends Transform {
 
     @Override
     void transform(TransformInvocation transformInvocation) throws TransformException, InterruptedException, IOException {
-        inject.prepare()
-        transformInvocation.inputs.forEach() {
+        inject.prepare(transformInvocation)
+
+        transformInvocation.inputs.each {
             it.directoryInputs.each {
-                inject.injectDir(it.file.absolutePath)
+                def dest = transformInvocation.outputProvider.getContentLocation(it.name, it.contentTypes, it.scopes, Format.DIRECTORY)
+                println "dir src = ${it.file.absolutePath} dest = $dest"
+                FileUtils.copyDirectory(it.file, dest)
+                inject.injectDir(dest.absolutePath)
             }
             it.jarInputs.each {
-                inject.injectJar(it.file.absolutePath)
+                def dest = transformInvocation.outputProvider.getContentLocation(it.name, it.contentTypes, it.scopes, Format.JAR)
+                println "src = ${it.file.absolutePath} dest = $dest"
+                FileUtils.copyFile(it.file, dest)
+                inject.injectJar(dest.absolutePath)
             }
         }
     }

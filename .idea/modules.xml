@@ -4,8 +4,9 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/ATrace.iml" filepath="$PROJECT_DIR$/ATrace.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/atrace-gradle/gradle-atrace.iml" filepath="$PROJECT_DIR$/atrace-gradle/gradle-atrace.iml" />
+      <module fileurl="file://$PROJECT_DIR$/atrace-gradle/atrace-gradle.iml" filepath="$PROJECT_DIR$/atrace-gradle/atrace-gradle.iml" />
       <module fileurl="file://$PROJECT_DIR$/atrace-lib/atrace-lib.iml" filepath="$PROJECT_DIR$/atrace-lib/atrace-lib.iml" />
+      <module fileurl="file://$PROJECT_DIR$/atrace-gradle/gradle-atrace.iml" filepath="$PROJECT_DIR$/atrace-gradle/gradle-atrace.iml" />
     </modules>
   </component>
 </project>
