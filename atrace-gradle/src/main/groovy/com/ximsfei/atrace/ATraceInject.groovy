@@ -39,7 +39,6 @@ class ATraceInject {
         if (dir.isDirectory()) {
             dir.eachFileRecurse {
                 String filePath = it.absolutePath
-                println "file path = $filePath"
                 if (filePath.endsWith(".class")
                         && !filePath.contains('/R$')
                         && !filePath.contains('/R.class')
@@ -78,10 +77,8 @@ class ATraceInject {
     }
 
     private def injectMethod(CtMethod method) {
-        method.insertBefore("""com.ximsfei.atrace.ATrace.get().beforeMethod("${
-            method.longName
-        }");""")
-        method.insertAfter("""com.ximsfei.atrace.ATrace.get().afterMethod("${method.longName}");""")
+        method.insertBefore("""com.ximsfei.atrace.ATrace.enterMethod("${method.longName}", \$args);""")
+        method.insertAfter("""com.ximsfei.atrace.ATrace.exitMethod("${method.longName}", (Object) (\$w) \$_);""")
     }
 
     private def unzipJar(String jarPath, String destDirPath) {

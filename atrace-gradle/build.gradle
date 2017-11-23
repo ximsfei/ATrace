@@ -19,7 +19,6 @@ uploadArchives {
             pom.project {
                 artifactId "atrace"
             }
-
         }
     }
 }

@@ -8,6 +8,7 @@ public class ATraceApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        ATrace.get().init(this);
+        ATrace.init(this, true, true);
+        ATrace.traceBegin();
     }
 }
