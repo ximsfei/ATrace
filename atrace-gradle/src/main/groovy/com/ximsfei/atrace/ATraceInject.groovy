@@ -5,6 +5,7 @@ import com.android.build.gradle.AppExtension
 import com.android.build.gradle.BaseExtension
 import javassist.ClassPool
 import javassist.CtMethod
+import org.apache.commons.io.FileUtils
 import org.gradle.api.Project
 
 import java.util.jar.JarFile
@@ -59,6 +60,7 @@ class ATraceInject {
             jar.delete()
             injectDir(jarZipDir)
             zipJar(jarZipDir, path)
+            FileUtils.deleteDirectory(jarZipDir)
         }
     }
 
@@ -77,8 +79,12 @@ class ATraceInject {
     }
 
     private def injectMethod(CtMethod method) {
-        method.insertBefore("""com.ximsfei.atrace.ATrace.enterMethod("${method.longName}", \$args);""")
-        method.insertAfter("""com.ximsfei.atrace.ATrace.exitMethod("${method.longName}", (Object) (\$w) \$_);""")
+        method.insertBefore("""com.ximsfei.atrace.ATrace.enterMethod("${
+            method.longName
+        }", \$args);""")
+        method.insertAfter("""com.ximsfei.atrace.ATrace.exitMethod("${
+            method.longName
+        }", (Object) (\$w) \$_);""")
     }
 
     private def unzipJar(String jarPath, String destDirPath) {
