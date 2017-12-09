@@ -15,11 +15,14 @@ import java.util.zip.ZipEntry
 class ATraceInject {
     private Project project
     private AppExtension android
+    private ATraceExtension atrace
     private ClassPool pool
+    private HashSet<String> includePath = []
 
-    ATraceInject(Project project, BaseExtension android) {
+    ATraceInject(Project project, BaseExtension android, ATraceExtension atrace) {
         this.project = project
         this.android = android
+        this.atrace = atrace
     }
 
     def prepare(TransformInvocation transformInvocation) {
@@ -33,6 +36,9 @@ class ATraceInject {
                 pool.insertClassPath(it.file.absolutePath)
             }
         }
+        for (def include : atrace.include) {
+            includePath.add(include.replace(".", "/"))
+        }
     }
 
     def injectDir(String path) {
@@ -45,8 +51,16 @@ class ATraceInject {
                         && !filePath.contains('/R.class')
                         && !filePath.contains("/BuildConfig.class")
                         && !filePath.contains('com/ximsfei/atrace/ATrace')) {
-                    String className = filePath.replace(path + "/", "").replace("/", '.').replace(".class", "")
-                    injectClass(className, path)
+                    for (String include : includePath) {
+                        if (filePath.contains(include)) {
+                            String className = filePath.replace(path + "/", "").replace("/", '.').replace(".class", "")
+                            try {
+                                injectClass(className, path)
+                            } catch (Exception e) {
+                            }
+                            break
+                        }
+                    }
                 }
             }
         }
@@ -71,7 +85,10 @@ class ATraceInject {
         }
         for (def method : c.declaredMethods) {
             if (null != method.methodInfo.codeAttribute) {
-                injectMethod(method)
+                try {
+                    injectMethod(method)
+                } catch (Exception e) {
+                }
             }
         }
         c.writeFile(path)

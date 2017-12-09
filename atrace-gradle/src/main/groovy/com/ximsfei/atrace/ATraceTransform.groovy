@@ -13,12 +13,14 @@ import org.apache.commons.io.FileUtils
 class ATraceTransform extends Transform {
     private Project project
     private AppExtension android
+    private ATraceExtension atrace
     private ATraceInject inject
 
-    ATraceTransform(Project project, AppExtension android) {
+    ATraceTransform(Project project, AppExtension android, ATraceExtension atrace) {
         this.project = project
         this.android = android
-        this.inject = new ATraceInject(project, android)
+        this.atrace = atrace
+        this.inject = new ATraceInject(project, android, atrace)
     }
 
     @Override
@@ -56,7 +58,7 @@ class ATraceTransform extends Transform {
                 def dest = transformInvocation.outputProvider.getContentLocation(it.name, it.contentTypes, it.scopes, Format.JAR)
                 println "src = ${it.file.absolutePath} dest = $dest"
                 FileUtils.copyFile(it.file, dest)
-                inject.injectJar(dest.absolutePath)
+//                inject.injectJar(dest.absolutePath)
             }
         }
     }

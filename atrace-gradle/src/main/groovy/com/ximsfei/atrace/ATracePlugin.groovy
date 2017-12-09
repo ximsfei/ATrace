@@ -10,7 +10,9 @@ class ATracePlugin implements Plugin<Project> {
     void apply(Project project) {
         def android = project.getExtensions().findByName("android")
         if (android instanceof AppExtension) {
-            android.registerTransform(new ATraceTransform(project, android))
+            project.extensions.create("atrace", ATraceExtension)
+            def atrace = project.getExtensions().findByName("atrace")
+            android.registerTransform(new ATraceTransform(project, android, atrace))
         }
     }
 }

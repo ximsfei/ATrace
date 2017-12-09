@@ -7,23 +7,24 @@ import android.util.Log;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+`import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 final public class ATrace {
     private static final int TYPE_ENTER = 0;
     private static final int TYPE_EXIT = 1;
-    private static long sIndex = 0;
-    private static ThreadLocal<Long> sLocalIndex = new ThreadLocal<>();
+    private static AtomicInteger sIndex = new AtomicInteger();
+    private static ThreadLocal<Integer> sLocalIndex = new ThreadLocal<>();
     private static boolean isInit = false;
     private static boolean isBegin = false;
     private static boolean isDebug = false;
     private static boolean isPersistent = false;
     private static String mPackageName;
     private static String mProcessName;
-    private static HashMap<Long, List<String>> mThreadTraceBuffer = new HashMap<>();
-    private static HashMap<Long, String> mThreadArray = new HashMap<>();
+    private static ConcurrentHashMap<Long, List<String>> mThreadTraceBuffer = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<Long, String> mThreadArray = new ConcurrentHashMap<>();
 
     private ATrace() {
     }
@@ -86,7 +87,7 @@ final public class ATrace {
                 mThreadArray.put(threadId, threadName);
             }
             if (sLocalIndex.get() == null) {
-                sLocalIndex.set(0L);
+                sLocalIndex.set(0);
             }
             List<String> traces = mThreadTraceBuffer.get(threadId);
             if (!mThreadTraceBuffer.containsKey(threadId)) {
@@ -94,7 +95,7 @@ final public class ATrace {
                 mThreadTraceBuffer.put(threadId, traces);
             }
             if (isPersistent || isDebug) {
-                StringBuilder sb = new StringBuilder();
+                StringBuffer sb = new StringBuffer();
                 String argsType = "params";
                 if (type == 0) {
                     sb.append("enterMethod");
@@ -110,9 +111,9 @@ final public class ATrace {
                         .append(" [time, ").append(System.currentTimeMillis()).append("],")
                         .append(" [method, ").append(method).append("]");
 
-                if (args != null && args.length > 0) {
-                    for (int i = 0; i < args.length; i++) {
-                        sb.append(", [").append(argsType).append(i).append(", ").append(args[i]).append("]");
+                if (localArgs != null && localArgs.length > 0) {
+                    for (int i = 0; i < localArgs.length; i++) {
+//                        sb.append(", [").append(argsType).append(i).append(", ").append(localArgs[i]).append("]");
                     }
                 }
                 String msg = sb.toString();
@@ -123,7 +124,7 @@ final public class ATrace {
                     print(msg);
                 }
             }
-            sIndex++;
+            sIndex.incrementAndGet();
             sLocalIndex.set(sLocalIndex.get() + 1);
         }
     }
