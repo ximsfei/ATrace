@@ -7,7 +7,7 @@ import android.util.Log;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
-`import java.util.List;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -111,8 +111,8 @@ final public class ATrace {
                         .append(" [time, ").append(System.currentTimeMillis()).append("],")
                         .append(" [method, ").append(method).append("]");
 
-                if (localArgs != null && localArgs.length > 0) {
-                    for (int i = 0; i < localArgs.length; i++) {
+                if (args != null && args.length > 0) {
+                    for (int i = 0; i < args.length; i++) {
 //                        sb.append(", [").append(argsType).append(i).append(", ").append(localArgs[i]).append("]");
                     }
                 }

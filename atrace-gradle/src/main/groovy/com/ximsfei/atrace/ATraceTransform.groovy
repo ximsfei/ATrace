@@ -50,15 +50,13 @@ class ATraceTransform extends Transform {
         transformInvocation.inputs.each {
             it.directoryInputs.each {
                 def dest = transformInvocation.outputProvider.getContentLocation(it.name, it.contentTypes, it.scopes, Format.DIRECTORY)
-                println "dir src = ${it.file.absolutePath} dest = $dest"
                 FileUtils.copyDirectory(it.file, dest)
                 inject.injectDir(dest.absolutePath)
             }
             it.jarInputs.each {
                 def dest = transformInvocation.outputProvider.getContentLocation(it.name, it.contentTypes, it.scopes, Format.JAR)
-                println "src = ${it.file.absolutePath} dest = $dest"
                 FileUtils.copyFile(it.file, dest)
-//                inject.injectJar(dest.absolutePath)
+                inject.injectJar(dest.absolutePath)
             }
         }
     }

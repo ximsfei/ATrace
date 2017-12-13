@@ -17,7 +17,7 @@ class ATraceInject {
     private AppExtension android
     private ATraceExtension atrace
     private ClassPool pool
-    private HashSet<String> includePath = []
+    private HashSet<String> includePkg = []
 
     ATraceInject(Project project, BaseExtension android, ATraceExtension atrace) {
         this.project = project
@@ -37,32 +37,7 @@ class ATraceInject {
             }
         }
         for (def include : atrace.include) {
-            includePath.add(include.replace(".", "/"))
-        }
-    }
-
-    def injectDir(String path) {
-        def dir = new File(path)
-        if (dir.isDirectory()) {
-            dir.eachFileRecurse {
-                String filePath = it.absolutePath
-                if (filePath.endsWith(".class")
-                        && !filePath.contains('/R$')
-                        && !filePath.contains('/R.class')
-                        && !filePath.contains("/BuildConfig.class")
-                        && !filePath.contains('com/ximsfei/atrace/ATrace')) {
-                    for (String include : includePath) {
-                        if (filePath.contains(include)) {
-                            String className = filePath.replace(path + "/", "").replace("/", '.').replace(".class", "")
-                            try {
-                                injectClass(className, path)
-                            } catch (Exception e) {
-                            }
-                            break
-                        }
-                    }
-                }
-            }
+            includePkg.add(include.replace("/", "."))
         }
     }
 
@@ -74,7 +49,32 @@ class ATraceInject {
             jar.delete()
             injectDir(jarZipDir)
             zipJar(jarZipDir, path)
-            FileUtils.deleteDirectory(jarZipDir)
+            FileUtils.deleteDirectory(new File(jarZipDir))
+        }
+    }
+
+    def injectDir(String path) {
+        def dir = new File(path)
+        if (dir.isDirectory()) {
+            dir.eachFileRecurse {
+                def filePath = it.absolutePath
+                if (filePath.replaceAll(".class\\d*\$", ".class").endsWith(".class")
+                        && !filePath.contains('/R$')
+                        && !filePath.contains('/R.class')
+                        && !filePath.contains("/BuildConfig.class")
+                        && !filePath.contains('com/ximsfei/atrace/ATrace')) {
+                    for (String include : includePkg) {
+                        String className = filePath.replace(path + "/", "").replace("/", '.').replaceAll(".class\\d*\$", "")
+                        if (className.startsWith(include)) {
+                            try {
+                                injectClass(className, filePath)
+                            } catch (Exception e) {
+                            }
+                            break
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -91,7 +91,11 @@ class ATraceInject {
                 }
             }
         }
-        c.writeFile(path)
+        def classFile = new File(path)
+        byte[] bytes = c.toBytecode()
+        classFile.withOutputStream {
+            it.write(bytes)
+        }
         c.detach()
     }
 
@@ -113,10 +117,17 @@ class ATraceInject {
                 if (jarEntry.directory) {
                     continue
                 }
-                def entryName = jarEntry.getName()
-                def outFileName = destDirPath + File.separator + entryName
-                def outFile = new File(outFileName)
-                outFile.getParentFile().mkdirs()
+                def entryName = jarEntry.name
+                def outFile = new File(destDirPath, entryName)
+                outFile.parentFile.mkdirs()
+                if (entryName.endsWith(".class")) {
+                    for (def i = 0; i < Integer.MAX_VALUE; i++) {
+                        outFile = new File(destDirPath, entryName.replace(".class", ".class" + i))
+                        if (!outFile.exists()) {
+                            break
+                        }
+                    }
+                }
                 def inputStream = jarFile.getInputStream(jarEntry)
                 def fileOutputStream = new FileOutputStream(outFile)
                 fileOutputStream << inputStream
@@ -132,6 +143,7 @@ class ATraceInject {
         def outputStream = new JarOutputStream(new FileOutputStream(jarPath))
         file.eachFileRecurse {
             def entryName = it.getAbsolutePath().substring(srcPath.length() + 1)
+            entryName = entryName.replaceAll(".class\\d*\$", ".class")
             outputStream.putNextEntry(new ZipEntry(entryName))
             if (!it.directory) {
                 def inputStream = new FileInputStream(it)
