@@ -63,14 +63,15 @@ class ATraceInject {
                         && !filePath.contains('/R.class')
                         && !filePath.contains("/BuildConfig.class")
                         && !filePath.contains('com/ximsfei/atrace/ATrace')) {
-                    for (String include : includePkg) {
+                    if (includePkg.empty) {
                         String className = filePath.replace(path + "/", "").replace("/", '.').replaceAll(".class\\d*\$", "")
-                        if (className.startsWith(include)) {
-                            try {
-                                injectClass(className, filePath)
-                            } catch (Exception e) {
+                        injectClass(className, filePath)
+                    } else {
+                        for (String include : includePkg) {
+                            String className = filePath.replace(path + "/", "").replace("/", '.').replaceAll(".class\\d*\$", "")
+                            if (className.startsWith(include)) {
+                                break
                             }
-                            break
                         }
                     }
                 }
@@ -79,33 +80,36 @@ class ATraceInject {
     }
 
     private def injectClass(String className, String path) {
-        def c = pool.getCtClass(className)
-        if (c.isFrozen()) {
-            c.defrost()
-        }
-        for (def method : c.declaredMethods) {
-            if (null != method.methodInfo.codeAttribute) {
-                try {
+        try {
+            def c = pool.getCtClass(className)
+            if (c.isFrozen()) {
+                c.defrost()
+            }
+            for (def method : c.declaredMethods) {
+                if (null != method.methodInfo.codeAttribute) {
                     injectMethod(method)
-                } catch (Exception e) {
                 }
             }
+            def classFile = new File(path)
+            byte[] bytes = c.toBytecode()
+            classFile.withOutputStream {
+                it.write(bytes)
+            }
+            c.detach()
+        } catch (Exception e) {
         }
-        def classFile = new File(path)
-        byte[] bytes = c.toBytecode()
-        classFile.withOutputStream {
-            it.write(bytes)
-        }
-        c.detach()
     }
 
     private def injectMethod(CtMethod method) {
-        method.insertBefore("""com.ximsfei.atrace.ATrace.enterMethod("${
-            method.longName
-        }", \$args);""")
-        method.insertAfter("""com.ximsfei.atrace.ATrace.exitMethod("${
-            method.longName
-        }", (Object) (\$w) \$_);""")
+        try {
+            method.insertBefore("""com.ximsfei.atrace.ATrace.enterMethod("${
+                method.longName
+            }", \$args);""")
+            method.insertAfter("""com.ximsfei.atrace.ATrace.exitMethod("${
+                method.longName
+            }", (Object) (\$w) \$_);""")
+        } catch (Exception e) {
+        }
     }
 
     private def unzipJar(String jarPath, String destDirPath) {
