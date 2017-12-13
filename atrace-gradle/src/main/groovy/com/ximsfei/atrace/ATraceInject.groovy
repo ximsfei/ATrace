@@ -63,13 +63,13 @@ class ATraceInject {
                         && !filePath.contains('/R.class')
                         && !filePath.contains("/BuildConfig.class")
                         && !filePath.contains('com/ximsfei/atrace/ATrace')) {
+                    String className = filePath.replace(path + "/", "").replace("/", '.').replaceAll(".class\\d*\$", "")
                     if (includePkg.empty) {
-                        String className = filePath.replace(path + "/", "").replace("/", '.').replaceAll(".class\\d*\$", "")
                         injectClass(className, filePath)
                     } else {
                         for (String include : includePkg) {
-                            String className = filePath.replace(path + "/", "").replace("/", '.').replaceAll(".class\\d*\$", "")
                             if (className.startsWith(include)) {
+                                injectClass(className, filePath)
                                 break
                             }
                         }
