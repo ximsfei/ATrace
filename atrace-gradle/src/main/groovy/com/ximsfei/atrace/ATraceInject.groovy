@@ -4,7 +4,7 @@ import com.android.build.api.transform.TransformInvocation
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.BaseExtension
 import javassist.ClassPool
-import javassist.CtMethod
+import javassist.CtBehavior
 import org.apache.commons.io.FileUtils
 import org.gradle.api.Project
 
@@ -77,7 +77,6 @@ class ATraceInject {
     private def injectClass(String className, String path) {
         try {
             if (checkClassNeedInject(className)) {
-
                 def c = pool.getCtClass(className)
                 if (c.frozen) {
                     c.defrost()
@@ -85,6 +84,11 @@ class ATraceInject {
                 for (def method : c.declaredMethods) {
                     if (null != method.methodInfo.codeAttribute) {
                         injectMethod(method)
+                    }
+                }
+                for (def constructor : c.constructors) {
+                    if (null != constructor.methodInfo.codeAttribute) {
+                        injectMethod(constructor)
                     }
                 }
                 def classFile = new File(path)
@@ -152,7 +156,7 @@ class ATraceInject {
         inject
     }
 
-    private def injectMethod(CtMethod method) {
+    private def injectMethod(CtBehavior method) {
         try {
             method.insertBefore("""com.ximsfei.atrace.ATrace.enterMethod("${
                 method.longName
