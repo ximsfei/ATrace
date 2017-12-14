@@ -24,3 +24,19 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 }
+
+apply plugin: 'maven'
+
+group 'com.ximsfei'
+version '1.0.0'
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: "file:///Users/ximsfei/local/repo")
+            pom.project {
+                artifactId "atrace-lib"
+            }
+        }
+    }
+}
