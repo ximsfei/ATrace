@@ -18,6 +18,7 @@ class ATraceInject {
     private ATraceExtension atrace
     private ClassPool pool
     private HashSet<String> includePkg = []
+    private HashSet<String> excludePkg = []
 
     ATraceInject(Project project, BaseExtension android, ATraceExtension atrace) {
         this.project = project
@@ -39,6 +40,13 @@ class ATraceInject {
         for (def include : atrace.include) {
             includePkg.add(include.replace("/", "."))
         }
+        for (def exclude : atrace.exclude) {
+            excludePkg.add(exclude.replace("/", "."))
+        }
+        excludePkg.add("*.R")
+        excludePkg.add("*.R\$*")
+        excludePkg.add("*.BuildConfig")
+        excludePkg.add("com.ximsfei.atrace.ATrace")
     }
 
     def injectJar(String path) {
@@ -58,22 +66,9 @@ class ATraceInject {
         if (dir.isDirectory()) {
             dir.eachFileRecurse {
                 def filePath = it.absolutePath
-                if (filePath.replaceAll(".class\\d*\$", ".class").endsWith(".class")
-                        && !filePath.contains('/R$')
-                        && !filePath.contains('/R.class')
-                        && !filePath.contains("/BuildConfig.class")
-                        && !filePath.contains('com/ximsfei/atrace/ATrace')) {
+                if (filePath.replaceAll(".class\\d*\$", ".class").endsWith(".class")) {
                     String className = filePath.replace(path + "/", "").replace("/", '.').replaceAll(".class\\d*\$", "")
-                    if (includePkg.empty) {
-                        injectClass(className, filePath)
-                    } else {
-                        for (String include : includePkg) {
-                            if (className.startsWith(include)) {
-                                injectClass(className, filePath)
-                                break
-                            }
-                        }
-                    }
+                    injectClass(className, filePath)
                 }
             }
         }
@@ -81,23 +76,80 @@ class ATraceInject {
 
     private def injectClass(String className, String path) {
         try {
-            def c = pool.getCtClass(className)
-            if (c.isFrozen()) {
-                c.defrost()
-            }
-            for (def method : c.declaredMethods) {
-                if (null != method.methodInfo.codeAttribute) {
-                    injectMethod(method)
+            if (checkClassNeedInject(className)) {
+
+                def c = pool.getCtClass(className)
+                if (c.frozen) {
+                    c.defrost()
                 }
+                for (def method : c.declaredMethods) {
+                    if (null != method.methodInfo.codeAttribute) {
+                        injectMethod(method)
+                    }
+                }
+                def classFile = new File(path)
+                byte[] bytes = c.toBytecode()
+                classFile.withOutputStream {
+                    it.write(bytes)
+                }
+                c.detach()
             }
-            def classFile = new File(path)
-            byte[] bytes = c.toBytecode()
-            classFile.withOutputStream {
-                it.write(bytes)
-            }
-            c.detach()
         } catch (Exception e) {
         }
+    }
+
+    private def checkClassNeedInject(String className) {
+        def inject = includePkg.empty
+        for (String include : includePkg) {
+            if (include.contains("*")) {
+                if (include.startsWith("*")) {
+                    if (include.endsWith("*")) {
+                        include = include.substring(1, include.length() - 1)
+                        if (className.contains(include)) {
+                            inject = true
+                            break
+                        }
+                    } else {
+                        include = include.substring(1)
+                        if (className.endsWith(include)) {
+                            inject = true
+                            break
+                        }
+                    }
+                }
+            } else if (className.startsWith(include)) {
+                inject = true
+                break
+            }
+            inject = false
+        }
+        if (inject) {
+            if (!excludePkg.empty) {
+                for (String exclude : excludePkg) {
+                    if (exclude.contains("*")) {
+                        if (exclude.startsWith("*")) {
+                            if (exclude.endsWith("*")) {
+                                exclude = exclude.substring(1, exclude.length() - 1)
+                                if (className.contains(exclude)) {
+                                    inject = false
+                                    break
+                                }
+                            } else {
+                                exclude = exclude.substring(1)
+                                if (className.endsWith(exclude)) {
+                                    inject = false
+                                    break
+                                }
+                            }
+                        }
+                    } else if (className.startsWith(exclude)) {
+                        inject = false
+                        break
+                    }
+                }
+            }
+        }
+        inject
     }
 
     private def injectMethod(CtMethod method) {
@@ -126,6 +178,7 @@ class ATraceInject {
                 outFile.parentFile.mkdirs()
                 if (entryName.endsWith(".class")) {
                     for (def i = 0; i < Integer.MAX_VALUE; i++) {
+                        // 通过添加后缀的形式来解决部分运行环境中不能同时存在A.class 和 a.class的问题
                         outFile = new File(destDirPath, entryName.replace(".class", ".class" + i))
                         if (!outFile.exists()) {
                             break
